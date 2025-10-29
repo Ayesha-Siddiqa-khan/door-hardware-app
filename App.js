@@ -1,28 +1,38 @@
-﻿import 'react-native-gesture-handler';
-import { useMemo } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { Provider as PaperProvider, MD3DarkTheme, MD3LightTheme } from 'react-native-paper';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { SQLiteProvider } from 'expo-sqlite';
-import AppNavigator from './src/navigation/AppNavigator';
-import { SecurityGate } from './src/components/SecurityGate';
-import { initializeDatabase } from './src/database/db';
-import { AppStateProvider } from './src/state/AppStateProvider';
-import { LocalizationProvider } from './src/localization/LocalizationProvider';
-import { useSettings } from './src/hooks/useSettings';
+﻿import "react-native-gesture-handler";
+import { useEffect, useMemo } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { Provider as PaperProvider, MD3DarkTheme, MD3LightTheme } from "react-native-paper";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SQLiteProvider, useSQLiteContext } from "expo-sqlite";
+import AppNavigator from "./src/navigation/AppNavigator";
+import { SecurityGate } from "./src/components/SecurityGate";
+import { initializeDatabase, registerDatabase } from "./src/database/db";
+import { AppStateProvider } from "./src/state/AppStateProvider";
+import { LocalizationProvider } from "./src/localization/LocalizationProvider";
+import { SettingsProvider, useSettings } from "./src/hooks/useSettings";
 
-export default function App() {
+function DatabaseRegistrar({ children }) {
+  const db = useSQLiteContext();
+
+  useEffect(() => {
+    registerDatabase(db);
+  }, [db]);
+
+  return children;
+}
+
+function AppContent() {
   const { settings, loading, updateSetting } = useSettings();
 
   const theme = useMemo(() => {
-    const baseTheme = settings.theme === 'dark' ? MD3DarkTheme : MD3LightTheme;
+    const baseTheme = settings.theme === "dark" ? MD3DarkTheme : MD3LightTheme;
     return {
       ...baseTheme,
       colors: {
         ...baseTheme.colors,
-        primary: '#1F4690',
-        secondary: '#FFA500',
+        primary: "#1F4690",
+        secondary: "#FFA500",
       },
     };
   }, [settings.theme]);
@@ -36,31 +46,37 @@ export default function App() {
   }
 
   return (
-    <SQLiteProvider databaseName="door_hardware_shop.db" onInit={initializeDatabase}>
-      <AppStateProvider>
-        <LocalizationProvider
-          language={settings.language}
-          setLanguage={(lang) => updateSetting('language', lang)}
-        >
-          <PaperProvider theme={theme}>
-            <SafeAreaProvider>
-              <StatusBar style="auto" />
-              <SecurityGate>
-                <AppNavigator />
-              </SecurityGate>
-            </SafeAreaProvider>
-          </PaperProvider>
-        </LocalizationProvider>
-      </AppStateProvider>
-    </SQLiteProvider>
+    <LocalizationProvider language={settings.language} setLanguage={(lang) => updateSetting("language", lang)}>
+      <PaperProvider theme={theme}>
+        <SafeAreaProvider>
+          <StatusBar style="auto" />
+          <SecurityGate>
+            <AppNavigator />
+          </SecurityGate>
+        </SafeAreaProvider>
+      </PaperProvider>
+    </LocalizationProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <SettingsProvider>
+      <SQLiteProvider databaseName="door_hardware_shop.db" onInit={initializeDatabase}>
+        <DatabaseRegistrar>
+          <AppStateProvider>
+            <AppContent />
+          </AppStateProvider>
+        </DatabaseRegistrar>
+      </SQLiteProvider>
+    </SettingsProvider>
   );
 }
 
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
-

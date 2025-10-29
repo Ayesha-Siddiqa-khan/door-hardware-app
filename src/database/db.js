@@ -2,11 +2,24 @@
 
 const DATABASE_NAME = 'door_hardware_shop.db';
 
+let cachedDb = null;
+
 export async function getDatabase() {
-  return SQLite.openDatabaseAsync(DATABASE_NAME);
+  if (cachedDb) {
+    return cachedDb;
+  }
+  const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+  cachedDb = db;
+  return db;
+}
+
+export function registerDatabase(db) {
+  cachedDb = db;
 }
 
 export async function initializeDatabase(db) {
+  cachedDb = db;
+
   const statements = [
     'PRAGMA foreign_keys = ON;',
     `CREATE TABLE IF NOT EXISTS products (
@@ -118,4 +131,3 @@ export async function resetDatabase() {
   `);
   await initializeDatabase(db);
 }
-

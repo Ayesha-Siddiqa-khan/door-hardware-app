@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SETTINGS_KEY = 'door_hardware_settings';
@@ -11,35 +11,65 @@ const defaultSettings = {
   autoBackup: true,
 };
 
-export function useSettings() {
+const SettingsContext = createContext({
+  settings: defaultSettings,
+  loading: true,
+  updateSetting: async () => {},
+  resetSettings: async () => {},
+});
+
+export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(defaultSettings);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     AsyncStorage.getItem(SETTINGS_KEY)
       .then((value) => {
-        if (value) {
+        if (value && active) {
           setSettings((current) => ({ ...current, ...JSON.parse(value) }));
         }
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const updateSetting = useCallback(async (key, value) => {
-    const next = { ...settings, [key]: value };
-    setSettings(next);
-    await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
-  }, [settings]);
+    let nextSettings = null;
+    setSettings((prev) => {
+      nextSettings = { ...prev, [key]: value };
+      return nextSettings;
+    });
+    if (nextSettings) {
+      await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(nextSettings));
+    }
+  }, []);
 
   const resetSettings = useCallback(async () => {
     setSettings(defaultSettings);
     await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(defaultSettings));
   }, []);
 
-  return {
-    settings,
-    loading,
-    updateSetting,
-    resetSettings,
-  };
+  const contextValue = useMemo(
+    () => ({
+      settings,
+      loading,
+      updateSetting,
+      resetSettings,
+    }),
+    [settings, loading, updateSetting, resetSettings]
+  );
+
+  return <SettingsContext.Provider value={contextValue}>{children}</SettingsContext.Provider>;
+}
+
+export function useSettings() {
+  return useContext(SettingsContext);
 }

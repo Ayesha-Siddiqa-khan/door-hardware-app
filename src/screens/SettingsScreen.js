@@ -13,7 +13,7 @@ import {
 import * as DocumentPicker from 'expo-document-picker';
 import { useSettings } from '../hooks/useSettings';
 import { useSecurity } from '../hooks/useSecurity';
-import { LocalizationProvider, useTranslation } from '../localization/LocalizationProvider';
+import { useTranslation } from '../localization/LocalizationProvider';
 import { createBackup, restoreBackup } from '../utils/backup';
 
 export default function SettingsScreen() {
@@ -22,7 +22,7 @@ export default function SettingsScreen() {
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const { t } = useTranslation();
-  const [message, setMessage] = useState('');
+  const [messageKey, setMessageKey] = useState(null);
 
   const handleLanguageChange = (lang) => {
     updateSetting('language', lang);
@@ -31,9 +31,9 @@ export default function SettingsScreen() {
   const handleBackup = async () => {
     try {
       await createBackup();
-      setMessage('Backup created and ready to share.');
+      setMessageKey('backupCreated');
     } catch (error) {
-      setMessage('Failed to create backup.');
+      setMessageKey('backupFailed');
     }
   };
 
@@ -42,44 +42,44 @@ export default function SettingsScreen() {
     if (result.canceled || !result.assets?.length) return;
     try {
       await restoreBackup(result.assets[0].uri);
-      setMessage('Backup restored successfully.');
+      setMessageKey('backupRestored');
     } catch (error) {
-      setMessage('Failed to restore backup.');
+      setMessageKey('backupRestoreFailed');
     }
   };
 
   const handleEnableLock = async () => {
     if (!pin || pin !== confirmPin) {
-      setMessage('PINs do not match.');
+      setMessageKey('pinMismatch');
       return;
     }
     await security.enableLock(pin);
     setPin('');
     setConfirmPin('');
-    setMessage('App lock enabled.');
+    setMessageKey('appLockEnabled');
   };
 
   const handleDisableLock = async () => {
     await security.disableLock();
-    setMessage('App lock disabled.');
+    setMessageKey('appLockDisabled');
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Card style={styles.card}>
-        <Card.Title title="Appearance & Language" />
+        <Card.Title title={t('appearanceLanguage')} />
         <Card.Content>
-          <Text variant="labelMedium">Language</Text>
+          <Text variant="labelMedium">{t('languageLabel')}</Text>
           <SegmentedButtons
             value={settings.language}
             onValueChange={handleLanguageChange}
             buttons={[
-              { value: 'en', label: 'English' },
-              { value: 'ur', label: 'Urdu' },
+              { value: 'en', label: t('languageEnglish') },
+              { value: 'ur', label: t('languageUrdu') },
             ]}
           />
           <TextInput
-            label="Currency"
+            label={t('currencyLabel')}
             mode="outlined"
             value={settings.currency}
             onChangeText={(value) => updateSetting('currency', value)}
@@ -89,16 +89,16 @@ export default function SettingsScreen() {
       </Card>
 
       <Card style={styles.card}>
-        <Card.Title title="Security" />
+        <Card.Title title={t('security')} />
         <Card.Content>
           <View style={styles.row}>
-            <Text>Enable App Lock</Text>
+            <Text>{t('enableAppLock')}</Text>
             <Switch value={security.lockEnabled} onValueChange={(value) => (value ? null : handleDisableLock())} />
           </View>
           {!security.lockEnabled ? (
             <View>
               <TextInput
-                label="Create PIN"
+                label={t('createPin')}
                 value={pin}
                 onChangeText={setPin}
                 secureTextEntry
@@ -106,7 +106,7 @@ export default function SettingsScreen() {
                 style={styles.input}
               />
               <TextInput
-                label="Confirm PIN"
+                label={t('confirmPin')}
                 value={confirmPin}
                 onChangeText={setConfirmPin}
                 secureTextEntry
@@ -114,28 +114,28 @@ export default function SettingsScreen() {
                 style={styles.input}
               />
               <Button mode="contained" onPress={handleEnableLock}>
-                Enable Lock
+                {t('enableLock')}
               </Button>
             </View>
           ) : (
             <Button mode="outlined" onPress={handleDisableLock} style={styles.input}>
-              Disable Lock
+              {t('disableLock')}
             </Button>
           )}
         </Card.Content>
       </Card>
 
       <Card style={styles.card}>
-        <Card.Title title="Data Management" />
+        <Card.Title title={t('dataManagement')} />
         <Card.Content>
           <Button icon="content-save" mode="contained" onPress={handleBackup} style={styles.input}>
-            Create Backup
+            {t('createBackup')}
           </Button>
           <Button icon="restore" mode="outlined" onPress={handleRestore}>
-            Restore Backup
+            {t('restoreBackup')}
           </Button>
-          <HelperText type="info" visible={!!message}>
-            {message}
+          <HelperText type="info" visible={!!messageKey}>
+            {messageKey ? t(messageKey) : ''}
           </HelperText>
         </Card.Content>
       </Card>

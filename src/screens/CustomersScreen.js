@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import { FlatList, StyleSheet, View } from "react-native";
 import {
   Button,
   Dialog,
@@ -9,44 +9,51 @@ import {
   SegmentedButtons,
   Text,
   TextInput,
-} from 'react-native-paper';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+} from "react-native-paper";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useSQLiteContext } from "expo-sqlite";
+
 import {
   createCustomer,
   fetchCustomers,
   fetchOutstandingCustomers,
   updateCustomer,
-} from '../services/customerService';
-import { CustomerCard } from '../components/CustomerCard';
-import { validateCustomer } from '../utils/validators';
-import { useAppState } from '../state/AppStateProvider';
+} from "../services/customerService";
+import { CustomerCard } from "../components/CustomerCard";
+import { validateCustomer } from "../utils/validators";
+import { useAppState } from "../state/AppStateProvider";
 
 export default function CustomersScreen() {
   const navigation = useNavigation();
   const { refreshToken, refreshAll } = useAppState();
+  const db = useSQLiteContext();
   const [customers, setCustomers] = useState([]);
-  const [viewMode, setViewMode] = useState('all');
-  const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState("all");
+  const [search, setSearch] = useState("");
   const [dialogVisible, setDialogVisible] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
-  const [form, setForm] = useState({ name: '', phone: '', address: '', city: '' });
+  const [form, setForm] = useState({ name: "", phone: "", address: "", city: "" });
   const [errors, setErrors] = useState({});
 
   const loadCustomers = useCallback(async () => {
-    if (viewMode === 'credit') {
-      const credit = await fetchOutstandingCustomers();
+    if (viewMode === "credit") {
+      const credit = await fetchOutstandingCustomers(db);
       setCustomers(credit);
     } else {
-      const list = await fetchCustomers();
+      const list = await fetchCustomers(db);
       setCustomers(list);
     }
-  }, [viewMode]);
+  }, [viewMode, db]);
 
   useFocusEffect(
     useCallback(() => {
       loadCustomers();
     }, [loadCustomers, refreshToken])
   );
+
+  useEffect(() => {
+    loadCustomers();
+  }, [loadCustomers]);
 
   const filteredCustomers = useMemo(() => {
     if (!search) return customers;
@@ -63,33 +70,33 @@ export default function CustomersScreen() {
       setEditingCustomer(customer);
       setForm({
         name: customer.name,
-        phone: customer.phone ?? '',
-        address: customer.address ?? '',
-        city: customer.city ?? '',
+        phone: customer.phone ?? "",
+        address: customer.address ?? "",
+        city: customer.city ?? "",
       });
     } else {
       setEditingCustomer(null);
-      setForm({ name: '', phone: '', address: '', city: '' });
+      setForm({ name: "", phone: "", address: "", city: "" });
     }
     setErrors({});
     setDialogVisible(true);
   };
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     const validation = validateCustomer(form);
     setErrors(validation);
     if (Object.keys(validation).length > 0) return;
 
     if (editingCustomer) {
-      await updateCustomer(editingCustomer.id, form);
+      await updateCustomer(editingCustomer.id, form, db);
     } else {
-      await createCustomer(form);
+      await createCustomer(form, db);
     }
 
     setDialogVisible(false);
     refreshAll();
-    loadCustomers();
-  };
+    await loadCustomers();
+  }, [db, editingCustomer, form, loadCustomers, refreshAll]);
 
   return (
     <View style={styles.container}>
@@ -105,8 +112,8 @@ export default function CustomersScreen() {
         onValueChange={setViewMode}
         style={styles.segmented}
         buttons={[
-          { value: 'all', label: 'All' },
-          { value: 'credit', label: 'Credit Due' },
+          { value: "all", label: "All" },
+          { value: "credit", label: "Credit Due" },
         ]}
       />
 
@@ -117,8 +124,8 @@ export default function CustomersScreen() {
         renderItem={({ item }) => (
           <CustomerCard
             customer={item}
-            onPress={() => navigation.navigate('CustomerDetail', { customerId: item.id })}
-            onCollect={() => navigation.navigate('Payment', { customerId: item.id })}
+            onPress={() => navigation.navigate("CustomerDetail", { customerId: item.id })}
+            onCollect={() => navigation.navigate("Payment", { customerId: item.id })}
           />
         )}
         ListEmptyComponent={<Text style={styles.empty}>No customers found</Text>}
@@ -130,7 +137,7 @@ export default function CustomersScreen() {
 
       <Portal>
         <Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)}>
-          <Dialog.Title>{editingCustomer ? 'Edit Customer' : 'Add Customer'}</Dialog.Title>
+          <Dialog.Title>{editingCustomer ? "Edit Customer" : "Add Customer"}</Dialog.Title>
           <Dialog.Content>
             <TextInput
               label="Name"
@@ -179,7 +186,7 @@ export default function CustomersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F9FC',
+    backgroundColor: "#F7F9FC",
   },
   search: {
     margin: 16,
@@ -193,9 +200,9 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
   },
   empty: {
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 32,
-    color: '#6B778D',
+    color: "#6B778D",
   },
   addButton: {
     margin: 16,
