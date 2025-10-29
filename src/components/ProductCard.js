@@ -1,47 +1,75 @@
-import { StyleSheet, View, Image } from 'react-native';
-import { Card, Text, Chip, ProgressBar } from 'react-native-paper';
+import { Image, StyleSheet, View } from 'react-native';
+import { Card, Chip, ProgressBar, Text } from 'react-native-paper';
 import { colors } from '../constants/colors';
+import { elevation, radius, spacing } from '../constants/theme';
 import { getProductCategoryLabel } from '../constants/categories';
 import { formatCurrency } from '../utils/formatters';
 
+function getStockState(product) {
+  if (product.stock_quantity <= product.min_stock_level) {
+    return { label: 'Low stock', tint: colors.warning };
+  }
+  if (product.stock_quantity === 0) {
+    return { label: 'Out of stock', tint: colors.error };
+  }
+  return { label: 'In stock', tint: colors.success };
+}
+
 export function ProductCard({ product, onPress, actions }) {
-  const stockLevel = Math.min(
-    1,
-    product.min_stock_level > 0 ? product.stock_quantity / product.min_stock_level : 1
-  );
-  const lowStock = product.stock_quantity <= product.min_stock_level;
+  const { label: stockLabel, tint } = getStockState(product);
+  const progress =
+    product.min_stock_level > 0
+      ? Math.min(product.stock_quantity / Math.max(product.min_stock_level * 1.5, 1), 1)
+      : 1;
 
   return (
-    <Card style={styles.card} onPress={onPress}>
-      <Card.Content style={styles.row}>
-        {product.image_uri ? (
-          <Image source={{ uri: product.image_uri }} style={styles.thumbnail} />
-        ) : (
-          <View style={[styles.thumbnail, styles.placeholder]}>
-            <Text variant="titleMedium">{product.name.slice(0, 1).toUpperCase()}</Text>
-          </View>
-        )}
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <Text variant="titleMedium">{product.name}</Text>
-            <Chip compact style={styles.categoryChip}>
+    <Card style={styles.card} mode="contained" onPress={onPress}>
+      <Card.Content style={styles.content}>
+        <View style={styles.header}>
+          <View style={styles.titleBlock}>
+            <Text variant="titleMedium" numberOfLines={1}>
+              {product.name}
+            </Text>
+            <Chip compact style={styles.categoryChip} textStyle={styles.categoryText}>
               {getProductCategoryLabel(product.category)}
             </Chip>
           </View>
-          <Text variant="bodyMedium" style={styles.price}>
-            {formatCurrency(product.retail_price)}
-          </Text>
-          <View style={styles.stockRow}>
-            <Text variant="labelSmall">Stock: {product.stock_quantity}</Text>
-            <Text variant="labelSmall">Min: {product.min_stock_level}</Text>
-          </View>
-          <ProgressBar
-            progress={stockLevel}
-            color={lowStock ? colors.error : colors.success}
-            style={styles.progress}
-          />
-          {actions ? <View style={styles.actions}>{actions}</View> : null}
+          {product.image_uri ? (
+            <Image source={{ uri: product.image_uri }} style={styles.thumbnail} />
+          ) : (
+            <View style={styles.thumbnailPlaceholder}>
+              <Text variant="titleMedium">{product.name.slice(0, 1).toUpperCase()}</Text>
+            </View>
+          )}
         </View>
+
+        <Text variant="titleLarge" style={styles.price}>
+          {formatCurrency(product.retail_price)}
+        </Text>
+        {product.wholesale_price ? (
+          <Text variant="bodySmall" style={styles.subPrice}>
+            Wholesale {formatCurrency(product.wholesale_price)}
+          </Text>
+        ) : null}
+
+        <View style={styles.metaRow}>
+          <Chip compact icon="cube-outline" style={[styles.stockChip, { backgroundColor: colors.surfaceMuted }]}>
+            {stockLabel}
+          </Chip>
+          <Text variant="bodySmall" style={styles.stockDetail}>
+            {product.stock_quantity} in stock • Min {product.min_stock_level}
+          </Text>
+        </View>
+
+        <ProgressBar progress={progress} color={tint} style={styles.progress} />
+
+        {product.description ? (
+          <Text variant="bodySmall" style={styles.description} numberOfLines={2}>
+            {product.description}
+          </Text>
+        ) : null}
+
+        {actions ? <View style={styles.actions}>{actions}</View> : null}
       </Card.Content>
     </Card>
   );
@@ -49,47 +77,75 @@ export function ProductCard({ product, onPress, actions }) {
 
 const styles = StyleSheet.create({
   card: {
-    marginVertical: 6,
-  },
-  row: {
-    flexDirection: 'row',
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    marginBottom: spacing.lg,
+    ...elevation.base,
   },
   content: {
-    flex: 1,
+    gap: spacing.sm,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
   },
-  price: {
-    marginBottom: 4,
+  titleBlock: {
+    flex: 1,
+    marginRight: spacing.md,
+    gap: spacing.xs,
   },
-  stockRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  categoryChip: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.chip,
   },
-  progress: {
-    marginTop: 4,
+  categoryText: {
+    color: colors.textSecondary,
   },
   thumbnail: {
     width: 56,
     height: 56,
-    borderRadius: 8,
-    marginRight: 12,
+    borderRadius: radius.md,
   },
-  placeholder: {
-    backgroundColor: colors.border,
-    justifyContent: 'center',
+  thumbnailPlaceholder: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceMuted,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  categoryChip: {
-    backgroundColor: colors.background,
+  price: {
+    color: colors.text,
+  },
+  subPrice: {
+    color: colors.textSecondary,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flexWrap: 'wrap',
+  },
+  stockChip: {
+    backgroundColor: colors.overlay,
+  },
+  stockDetail: {
+    color: colors.textSecondary,
+  },
+  progress: {
+    height: 6,
+    borderRadius: radius.pill,
+  },
+  description: {
+    color: colors.textSecondary,
   },
   actions: {
     flexDirection: 'row',
-    marginTop: 8,
     justifyContent: 'flex-end',
+    gap: spacing.sm,
   },
 });

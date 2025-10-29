@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
 import {
   Button,
+  Chip,
   Dialog,
   HelperText,
   IconButton,
@@ -19,14 +20,18 @@ import {
   fetchProducts,
   updateProduct,
 } from '../services/productService';
-import { PRODUCT_CATEGORIES, getProductCategoryLabel } from '../constants/categories';
+import { PRODUCT_CATEGORIES } from '../constants/categories';
 import { ProductCard } from '../components/ProductCard';
 import { validateProduct } from '../utils/validators';
 import { useAppState } from '../state/AppStateProvider';
 import { createProductModel } from '../database/models';
+import { colors } from '../constants/colors';
+import { radius, spacing } from '../constants/theme';
+import { useTranslation } from '../localization/LocalizationProvider';
 
 export default function ProductsScreen() {
   const { refreshAll, refreshToken } = useAppState();
+  const { t } = useTranslation();
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -61,7 +66,9 @@ export default function ProductsScreen() {
         (item) =>
           item.name.toLowerCase().includes(q) ||
           item.description?.toLowerCase().includes(q) ||
-          getProductCategoryLabel(item.category).toLowerCase().includes(q)
+          PRODUCT_CATEGORIES.find((category) => category.key === item.category)?.label
+            ?.toLowerCase()
+            .includes(q)
       );
     }
     return list;
@@ -142,51 +149,71 @@ export default function ProductsScreen() {
     setStockDialog(false);
   };
 
-  return (
-    <View style={styles.container}>
+  const listHeader = (
+    <View style={styles.header}>
       <Searchbar
-        placeholder="Search products"
+        placeholder={t('products')}
         value={search}
         onChangeText={setSearch}
         style={styles.search}
       />
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterBar}>
-        <SegmentedButtons
-          value={categoryFilter}
-          onValueChange={setCategoryFilter}
-          buttons={[
-            { value: 'all', label: 'All' },
-            ...PRODUCT_CATEGORIES.map((category) => ({
-              value: category.key,
-              label: category.label,
-            })),
-          ]}
-        />
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filterRow}
+      >
+        <Chip
+          selected={categoryFilter === 'all'}
+          onPress={() => setCategoryFilter('all')}
+          style={styles.filterChip}
+        >
+          {t('all')}
+        </Chip>
+        {PRODUCT_CATEGORIES.map((category) => (
+          <Chip
+            key={category.key}
+            selected={categoryFilter === category.key}
+            onPress={() => setCategoryFilter(category.key)}
+            style={styles.filterChip}
+          >
+            {category.label}
+          </Chip>
+        ))}
       </ScrollView>
 
+      <Button icon="plus" mode="contained" onPress={() => openDialog()}>
+        {t('addProduct')}
+      </Button>
+    </View>
+  );
+
+  return (
+    <View style={styles.container}>
       <FlatList
         data={filteredProducts}
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => (
           <ProductCard
             product={item}
+            onPress={() => openDialog(item)}
             actions={
               <View style={styles.cardActions}>
-                <IconButton size={18} icon="pencil" onPress={() => openDialog(item)} />
-                <IconButton size={18} icon="package-variant" onPress={() => openStockDialog(item)} />
-                <IconButton size={18} icon="delete" onPress={() => handleDelete(item)} />
+                <IconButton size={20} icon="pencil" onPress={() => openDialog(item)} />
+                <IconButton
+                  size={20}
+                  icon="package-variant"
+                  onPress={() => openStockDialog(item)}
+                />
+                <IconButton size={20} icon="delete" onPress={() => handleDelete(item)} />
               </View>
             }
           />
         )}
+        ListHeaderComponent={listHeader}
         contentContainerStyle={styles.listContent}
-        ListEmptyComponent={<Text style={styles.emptyState}>No products yet</Text>}
+        ListEmptyComponent={<Text style={styles.emptyState}>{t('noProductsMatch')}</Text>}
       />
-
-      <Button icon="plus" mode="contained" style={styles.fab} onPress={() => openDialog()}>
-        Add Product
-      </Button>
 
       <Portal>
         <Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)}>
@@ -195,15 +222,15 @@ export default function ProductsScreen() {
             <View style={styles.dialogContent}>
               <TextInput
                 label="Name"
+                mode="outlined"
                 value={form.name}
                 onChangeText={(value) => setForm((prev) => ({ ...prev, name: value }))}
-                mode="outlined"
                 error={!!errors.name}
               />
-              <HelperText visible={!!errors.name} type="error">
+              <HelperText type="error" visible={!!errors.name}>
                 {errors.name}
               </HelperText>
-              <Text variant="labelMedium">Category</Text>
+
               <SegmentedButtons
                 value={form.category}
                 onValueChange={(value) => setForm((prev) => ({ ...prev, category: value }))}
@@ -213,35 +240,52 @@ export default function ProductsScreen() {
                 }))}
                 style={styles.categorySelector}
               />
-              <TextInput
-                label="Retail Price"
-                mode="outlined"
-                keyboardType="numeric"
-                value={String(form.retail_price ?? '')}
-                onChangeText={(value) => setForm((prev) => ({ ...prev, retail_price: value }))}
-                error={!!errors.retail_price}
-              />
-              <TextInput
-                label="Wholesale Price"
-                mode="outlined"
-                keyboardType="numeric"
-                value={String(form.wholesale_price ?? '')}
-                onChangeText={(value) => setForm((prev) => ({ ...prev, wholesale_price: value }))}
-              />
-              <TextInput
-                label="Stock Quantity"
-                mode="outlined"
-                keyboardType="numeric"
-                value={String(form.stock_quantity ?? '')}
-                onChangeText={(value) => setForm((prev) => ({ ...prev, stock_quantity: value }))}
-              />
-              <TextInput
-                label="Minimum Stock Level"
-                mode="outlined"
-                keyboardType="numeric"
-                value={String(form.min_stock_level ?? '')}
-                onChangeText={(value) => setForm((prev) => ({ ...prev, min_stock_level: value }))}
-              />
+
+              <View style={styles.priceRow}>
+                <TextInput
+                  label="Retail Price"
+                  mode="outlined"
+                  keyboardType="numeric"
+                  value={String(form.retail_price ?? '')}
+                  onChangeText={(value) => setForm((prev) => ({ ...prev, retail_price: value }))}
+                  error={!!errors.retail_price}
+                  style={styles.priceField}
+                />
+                <TextInput
+                  label="Wholesale Price"
+                  mode="outlined"
+                  keyboardType="numeric"
+                  value={String(form.wholesale_price ?? '')}
+                  onChangeText={(value) => setForm((prev) => ({ ...prev, wholesale_price: value }))}
+                  style={styles.priceField}
+                />
+              </View>
+
+              <View style={styles.priceRow}>
+                <TextInput
+                  label="Stock Quantity"
+                  mode="outlined"
+                  keyboardType="numeric"
+                  value={String(form.stock_quantity ?? '')}
+                  onChangeText={(value) => setForm((prev) => ({ ...prev, stock_quantity: value }))}
+                  style={styles.priceField}
+                />
+                <TextInput
+                  label="Minimum Stock Level"
+                  mode="outlined"
+                  keyboardType="numeric"
+                  value={String(form.min_stock_level ?? '')}
+                  onChangeText={(value) =>
+                    setForm((prev) => ({ ...prev, min_stock_level: value }))
+                  }
+                  style={styles.priceField}
+                />
+              </View>
+
+              <HelperText type="error" visible={!!errors.stock_quantity || !!errors.min_stock_level}>
+                {errors.stock_quantity || errors.min_stock_level || ''}
+              </HelperText>
+
               <TextInput
                 label="Description"
                 mode="outlined"
@@ -292,43 +336,56 @@ export default function ProductsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F9FC',
+    backgroundColor: colors.background,
+  },
+  header: {
+    gap: spacing.md,
+    padding: spacing.lg,
+    paddingBottom: spacing.md,
   },
   search: {
-    margin: 16,
-    borderRadius: 16,
+    borderRadius: radius.lg,
   },
-  filterBar: {
-    paddingHorizontal: 16,
-    marginBottom: 8,
+  filterRow: {
+    gap: spacing.sm,
+    paddingRight: spacing.lg,
+  },
+  filterChip: {
+    backgroundColor: colors.surface,
   },
   listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 48,
-  },
-  emptyState: {
-    textAlign: 'center',
-    marginTop: 32,
-    color: '#6B778D',
-  },
-  fab: {
-    margin: 16,
-  },
-  dialogContent: {
-    paddingHorizontal: 16,
-    gap: 12,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xxl,
+    gap: spacing.md,
   },
   cardActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.xs,
   },
-  stockLabel: {
-    marginBottom: 8,
+  emptyState: {
+    textAlign: 'center',
+    marginTop: spacing.lg,
+    color: colors.textSecondary,
   },
-  notes: {
-    marginTop: 8,
+  dialogContent: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
   },
   categorySelector: {
-    marginBottom: 8,
+    marginBottom: spacing.sm,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  priceField: {
+    flex: 1,
+  },
+  stockLabel: {
+    marginBottom: spacing.sm,
+  },
+  notes: {
+    marginTop: spacing.sm,
   },
 });

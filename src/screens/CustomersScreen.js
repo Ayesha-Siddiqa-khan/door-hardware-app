@@ -2,6 +2,7 @@
 import { FlatList, StyleSheet, View } from "react-native";
 import {
   Button,
+  Card,
   Dialog,
   HelperText,
   Portal,
@@ -19,14 +20,19 @@ import {
   fetchOutstandingCustomers,
   updateCustomer,
 } from "../services/customerService";
+import { formatCurrency } from "../utils/formatters";
 import { CustomerCard } from "../components/CustomerCard";
 import { validateCustomer } from "../utils/validators";
 import { useAppState } from "../state/AppStateProvider";
+import { colors } from "../constants/colors";
+import { radius, spacing } from "../constants/theme";
+import { useTranslation } from "../localization/LocalizationProvider";
 
 export default function CustomersScreen() {
   const navigation = useNavigation();
   const { refreshToken, refreshAll } = useAppState();
   const db = useSQLiteContext();
+  const { t } = useTranslation();
   const [customers, setCustomers] = useState([]);
   const [viewMode, setViewMode] = useState("all");
   const [search, setSearch] = useState("");
@@ -56,14 +62,27 @@ export default function CustomersScreen() {
   }, [loadCustomers]);
 
   const filteredCustomers = useMemo(() => {
-    if (!search) return customers;
+    const baseList =
+      viewMode === "credit" ? customers.filter((item) => (item.balance ?? 0) > 0) : customers;
+    if (!search) return baseList;
     const query = search.toLowerCase();
-    return customers.filter(
+    return baseList.filter(
       (customer) =>
         customer.name.toLowerCase().includes(query) ||
         customer.phone?.toLowerCase().includes(query)
     );
-  }, [customers, search]);
+  }, [customers, search, viewMode]);
+
+  const outstandingSummary = useMemo(() => {
+    const totalDue = filteredCustomers.reduce(
+      (sum, customer) => sum + (customer.balance ?? 0),
+      0
+    );
+    return {
+      count: filteredCustomers.length,
+      due: totalDue,
+    };
+  }, [filteredCustomers]);
 
   const openDialog = (customer = null) => {
     if (customer) {
@@ -101,7 +120,7 @@ export default function CustomersScreen() {
   return (
     <View style={styles.container}>
       <Searchbar
-        placeholder="Search customers"
+        placeholder={t('customers')}
         value={search}
         onChangeText={setSearch}
         style={styles.search}
@@ -112,10 +131,26 @@ export default function CustomersScreen() {
         onValueChange={setViewMode}
         style={styles.segmented}
         buttons={[
-          { value: "all", label: "All" },
-          { value: "credit", label: "Credit Due" },
+          { value: "all", label: t('all') },
+          { value: "credit", label: t('creditOutstanding') },
         ]}
       />
+
+      <Card style={styles.summaryCard} mode="contained">
+        <Card.Content style={styles.summaryContent}>
+          <View>
+            <Text variant="titleMedium" style={styles.summaryLabel}>
+              {viewMode === "credit" ? t('outstandingCustomersLabel') : t('customers')}
+            </Text>
+            <Text variant="bodySmall" style={styles.summarySubtext}>
+              {outstandingSummary.count} {t('customers').toLowerCase()}
+            </Text>
+          </View>
+          <Text variant="titleMedium" style={styles.summaryValue}>
+            {formatCurrency(outstandingSummary.due)}
+          </Text>
+        </Card.Content>
+      </Card>
 
       <FlatList
         data={filteredCustomers}
@@ -128,11 +163,11 @@ export default function CustomersScreen() {
             onCollect={() => navigation.navigate("Payment", { customerId: item.id })}
           />
         )}
-        ListEmptyComponent={<Text style={styles.empty}>No customers found</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>{t('noData')}</Text>}
       />
 
       <Button icon="account-plus" mode="contained" style={styles.addButton} onPress={() => openDialog()}>
-        Add Customer
+        {t('addCustomer')}
       </Button>
 
       <Portal>
@@ -186,25 +221,52 @@ export default function CustomersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F7F9FC",
+    backgroundColor: colors.background,
   },
   search: {
-    margin: 16,
-    borderRadius: 16,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    borderRadius: radius.lg,
   },
   segmented: {
-    marginHorizontal: 16,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+  },
+  summaryCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  summaryContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  summaryLabel: {
+    color: colors.text,
+  },
+  summarySubtext: {
+    color: colors.textSecondary,
+  },
+  summaryValue: {
+    color: colors.text,
   },
   list: {
-    paddingHorizontal: 16,
-    paddingBottom: 48,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
   empty: {
     textAlign: "center",
-    marginTop: 32,
-    color: "#6B778D",
+    marginTop: spacing.lg,
+    color: colors.textSecondary,
   },
   addButton: {
-    margin: 16,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    borderRadius: radius.md,
   },
 });

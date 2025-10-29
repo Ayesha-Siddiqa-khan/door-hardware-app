@@ -8,6 +8,8 @@ import * as FileSystem from 'expo-file-system';
 import { fetchSaleDetail } from '../services/salesService';
 import { formatCurrency } from '../utils/formatters';
 import { formatDateTime } from '../utils/date';
+import { colors } from '../constants/colors';
+import { radius, spacing } from '../constants/theme';
 
 export default function InvoiceScreen() {
   const route = useRoute();
@@ -93,41 +95,48 @@ export default function InvoiceScreen() {
 
   return (
     <View style={styles.container}>
-      <Card>
+      <Card style={styles.summaryCard} mode="contained">
         <Card.Title title={`Invoice ${sale.invoice_number}`} subtitle={formatDateTime(sale.sale_date)} />
         <Card.Content>
           <Text variant="bodyMedium">Customer: {sale.customer_name ?? 'Walk-in'}</Text>
           <Text variant="bodyMedium">Payment: {sale.payment_method}</Text>
           <Text variant="bodyMedium">Status: {sale.payment_status}</Text>
           <Text variant="titleMedium" style={styles.total}>Total {formatCurrency(sale.total_amount)}</Text>
+          <Text variant="bodySmall" style={styles.subtotal}>Paid {formatCurrency(totalPaid)}</Text>
         </Card.Content>
       </Card>
 
-      <List.Section>
-        <List.Subheader>Items</List.Subheader>
-        {items.map((item) => (
-          <List.Item
-            key={item.id}
-            title={`${item.product_name} × ${item.quantity}`}
-            description={formatCurrency(item.total_price)}
-          />
-        ))}
-      </List.Section>
-
-      <List.Section>
-        <List.Subheader>Payments</List.Subheader>
-        {payments.length ? (
-          payments.map((payment) => (
+      <Card style={styles.sectionCard} mode="contained">
+        <Card.Title title="Items" />
+        <Card.Content>
+          {items.map((item) => (
             <List.Item
-              key={payment.id}
-              title={formatCurrency(payment.amount)}
-              description={`${payment.payment_method} • ${formatDateTime(payment.payment_date)}`}
+              key={item.id}
+              title={`${item.product_name} × ${item.quantity}`}
+              description={formatCurrency(item.total_price)}
+              style={styles.listItem}
             />
-          ))
-        ) : (
-          <Text style={styles.empty}>No payments recorded</Text>
-        )}
-      </List.Section>
+          ))}
+        </Card.Content>
+      </Card>
+
+      <Card style={styles.sectionCard} mode="contained">
+        <Card.Title title="Payments" />
+        <Card.Content>
+          {payments.length ? (
+            payments.map((payment) => (
+              <List.Item
+                key={payment.id}
+                title={formatCurrency(payment.amount)}
+                description={`${payment.payment_method} • ${formatDateTime(payment.payment_date)}`}
+                style={styles.listItem}
+              />
+            ))
+          ) : (
+            <Text style={styles.empty}>No payments recorded</Text>
+          )}
+        </Card.Content>
+      </Card>
 
       <View style={styles.actions}>
         <Button icon="printer" mode="outlined" onPress={handlePrint}>
@@ -144,25 +153,46 @@ export default function InvoiceScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    gap: 16,
-    backgroundColor: '#F7F9FC',
+    padding: spacing.lg,
+    gap: spacing.lg,
+    backgroundColor: colors.background,
   },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: colors.background,
+  },
+  summaryCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   total: {
-    marginTop: 12,
+    marginTop: spacing.sm,
+  },
+  subtotal: {
+    color: colors.textSecondary,
+  },
+  sectionCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  listItem: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.divider,
+  },
+  empty: {
+    textAlign: 'center',
+    color: colors.textSecondary,
+    paddingVertical: spacing.md,
   },
   actions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
-  },
-  empty: {
-    marginHorizontal: 16,
-    color: '#6B778D',
+    gap: spacing.sm,
   },
 });

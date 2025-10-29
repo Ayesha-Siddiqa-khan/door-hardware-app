@@ -12,6 +12,7 @@ import ExpensesScreen from '../screens/ExpensesScreen';
 import InvoiceScreen from '../screens/InvoiceScreen';
 import CustomerDetailScreen from '../screens/CustomerDetailScreen';
 import PaymentScreen from '../screens/PaymentScreen';
+import AnalyticsDetailScreen from '../screens/AnalyticsDetailScreen';
 import { useTranslation } from '../localization/LocalizationProvider';
 
 const Tab = createBottomTabNavigator();
@@ -100,6 +101,11 @@ export default function AppNavigator() {
           name="Payment"
           component={PaymentScreen}
           options={{ title: 'Record Payment' }}
+        />
+        <Stack.Screen
+          name="AnalyticsDetail"
+          component={AnalyticsDetailScreen}
+          options={{ title: 'Analytics' }}
         />
       </Stack.Navigator>
     </NavigationContainer>

@@ -1,9 +1,17 @@
-﻿import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Card, Text } from 'react-native-paper';
+import { colors } from '../constants/colors';
+import { elevation, radius, spacing } from '../constants/theme';
 
-export function ReportCard({ title, value, subtitle, icon }) {
+export function ReportCard({ title, value, subtitle, icon, onPress }) {
   return (
-    <Card style={styles.card}>
+    <Card
+      style={[styles.card, onPress && styles.cardPressable]}
+      mode="contained"
+      onPress={onPress}
+      accessible
+      accessibilityRole={onPress ? 'button' : 'text'}
+    >
       <Card.Content>
         <View style={styles.header}>
           {icon ? <View style={styles.iconContainer}>{icon}</View> : null}
@@ -14,7 +22,7 @@ export function ReportCard({ title, value, subtitle, icon }) {
         <Text variant="headlineMedium" style={styles.value}>
           {value}
         </Text>
-        {subtitle ? <Text variant="bodySmall">{subtitle}</Text> : null}
+        {subtitle ? <Text variant="bodySmall" style={styles.subtitle}>{subtitle}</Text> : null}
       </Card.Content>
     </Card>
   );
@@ -22,22 +30,41 @@ export function ReportCard({ title, value, subtitle, icon }) {
 
 const styles = StyleSheet.create({
   card: {
-    flex: 1,
-    margin: 6,
-    borderRadius: 16,
+    width: 220,
+    marginRight: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    ...elevation.base,
+  },
+  cardPressable: {
+    borderColor: colors.primary,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   iconContainer: {
-    marginRight: 8,
+    width: 36,
+    height: 36,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.overlay,
+    marginRight: spacing.sm,
   },
   title: {
     flexShrink: 1,
+    color: colors.textSecondary,
   },
   value: {
-    marginBottom: 4,
+    marginBottom: spacing.xs,
+    color: colors.text,
+  },
+  subtitle: {
+    color: colors.textSecondary,
   },
 });

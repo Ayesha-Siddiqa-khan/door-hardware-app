@@ -1,25 +1,41 @@
 import { StyleSheet, View } from 'react-native';
-import { Text, IconButton, Divider } from 'react-native-paper';
+import { Divider, IconButton, Text } from 'react-native-paper';
+import { colors } from '../constants/colors';
+import { radius, spacing } from '../constants/theme';
 import { formatCurrency } from '../utils/formatters';
 
 export function SaleItem({ item, onIncrease, onDecrease, onRemove }) {
   return (
     <View style={styles.container}>
-      <View style={styles.row}>
+      <View style={styles.headerRow}>
         <View style={styles.info}>
-          <Text variant="titleSmall">{item.name}</Text>
+          <Text variant="titleSmall" numberOfLines={1}>
+            {item.name}
+          </Text>
           <Text variant="bodySmall" style={styles.subText}>
             {formatCurrency(item.unit_price)} × {item.quantity}
           </Text>
         </View>
-        <Text variant="titleMedium">{formatCurrency(item.total_price)}</Text>
+        <Text variant="titleMedium" style={styles.amount}>
+          {formatCurrency(item.total_price)}
+        </Text>
       </View>
+
       <Divider style={styles.divider} />
-      <View style={styles.actions}>
+
+      <View style={styles.footerRow}>
         <View style={styles.counter}>
-          <IconButton icon="minus" size={18} onPress={onDecrease} disabled={item.quantity <= 1} />
-          <Text variant="bodyMedium">{item.quantity}</Text>
-          <IconButton icon="plus" size={18} onPress={onIncrease} />
+          <IconButton
+            icon="minus"
+            size={18}
+            onPress={onDecrease}
+            disabled={item.quantity <= 1}
+            style={styles.counterButton}
+          />
+          <Text variant="bodyMedium" style={styles.counterValue}>
+            {item.quantity}
+          </Text>
+          <IconButton icon="plus" size={18} onPress={onIncrease} style={styles.counterButton} />
         </View>
         <IconButton icon="delete" onPress={onRemove} />
       </View>
@@ -29,28 +45,35 @@ export function SaleItem({ item, onIncrease, onDecrease, onRemove }) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    elevation: 1,
-    marginVertical: 6,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
   },
-  row: {
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   info: {
     flex: 1,
-    marginRight: 12,
+    marginRight: spacing.md,
+    gap: spacing.xs,
   },
   subText: {
-    color: '#7A8CA5',
+    color: colors.textSecondary,
+  },
+  amount: {
+    color: colors.text,
   },
   divider: {
-    marginVertical: 8,
+    marginVertical: 0,
+    backgroundColor: colors.divider,
   },
-  actions: {
+  footerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -58,5 +81,16 @@ const styles = StyleSheet.create({
   counter: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.xs,
+  },
+  counterButton: {
+    margin: 0,
+  },
+  counterValue: {
+    minWidth: 24,
+    textAlign: 'center',
   },
 });

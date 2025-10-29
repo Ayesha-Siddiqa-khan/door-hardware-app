@@ -1,10 +1,9 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import {
   Button,
   Card,
   HelperText,
-  List,
   SegmentedButtons,
   Switch,
   Text,
@@ -17,6 +16,8 @@ import { useTranslation } from '../localization/LocalizationProvider';
 import { createBackup, restoreBackup } from '../utils/backup';
 import { resetDatabase } from '../database/db';
 import { useAppState } from '../state/AppStateProvider';
+import { colors } from '../constants/colors';
+import { radius, spacing } from '../constants/theme';
 
 export default function SettingsScreen() {
   const { settings, updateSetting } = useSettings();
@@ -84,10 +85,12 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Card style={styles.card}>
+      <Card style={styles.card} mode="contained">
         <Card.Title title={t('appearanceLanguage')} />
         <Card.Content>
-          <Text variant="labelMedium">{t('languageLabel')}</Text>
+          <Text variant="labelMedium" style={styles.label}>
+            {t('languageLabel')}
+          </Text>
           <SegmentedButtons
             value={settings.language}
             onValueChange={handleLanguageChange}
@@ -106,7 +109,7 @@ export default function SettingsScreen() {
         </Card.Content>
       </Card>
 
-      <Card style={styles.card}>
+      <Card style={styles.card} mode="contained">
         <Card.Title title={t('security')} />
         <Card.Content>
           <View style={styles.row}>
@@ -114,14 +117,13 @@ export default function SettingsScreen() {
             <Switch value={security.lockEnabled} onValueChange={(value) => (value ? null : handleDisableLock())} />
           </View>
           {!security.lockEnabled ? (
-            <View>
+            <View style={styles.stack}>
               <TextInput
                 label={t('createPin')}
                 value={pin}
                 onChangeText={setPin}
                 secureTextEntry
                 keyboardType="number-pad"
-                style={styles.input}
               />
               <TextInput
                 label={t('confirmPin')}
@@ -129,7 +131,6 @@ export default function SettingsScreen() {
                 onChangeText={setConfirmPin}
                 secureTextEntry
                 keyboardType="number-pad"
-                style={styles.input}
               />
               <Button mode="contained" onPress={handleEnableLock}>
                 {t('enableLock')}
@@ -143,10 +144,10 @@ export default function SettingsScreen() {
         </Card.Content>
       </Card>
 
-      <Card style={styles.card}>
+      <Card style={styles.card} mode="contained">
         <Card.Title title={t('dataManagement')} />
-        <Card.Content>
-          <Button icon="content-save" mode="contained" onPress={handleBackup} style={styles.input}>
+        <Card.Content style={styles.stack}>
+          <Button icon="content-save" mode="contained" onPress={handleBackup}>
             {t('createBackup')}
           </Button>
           <Button icon="restore" mode="outlined" onPress={handleRestore}>
@@ -158,7 +159,6 @@ export default function SettingsScreen() {
             onPress={handleLoadDemoData}
             loading={loadingDemo}
             disabled={loadingDemo}
-            style={styles.input}
           >
             {t('loadDemoData')}
           </Button>
@@ -174,26 +174,32 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F9FC',
+    backgroundColor: colors.background,
   },
   content: {
-    padding: 16,
-    gap: 16,
+    padding: spacing.lg,
+    gap: spacing.lg,
   },
   card: {
-    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+  },
+  label: {
+    marginBottom: spacing.sm,
   },
   input: {
-    marginTop: 12,
+    marginTop: spacing.md,
+  },
+  stack: {
+    gap: spacing.sm,
+    marginTop: spacing.sm,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
 });
-
-
-
-

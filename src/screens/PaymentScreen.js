@@ -1,16 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Button, HelperText, RadioButton, Text, TextInput } from 'react-native-paper';
+import { Button, Card, HelperText, RadioButton, Text, TextInput } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { PAYMENT_METHODS } from '../constants/categories';
 import { fetchCustomerById } from '../services/customerService';
 import { fetchSaleDetail, recordPayment } from '../services/salesService';
 import { useAppState } from '../state/AppStateProvider';
+import { colors } from '../constants/colors';
+import { radius, spacing } from '../constants/theme';
+import { useTranslation } from '../localization/LocalizationProvider';
 
 export default function PaymentScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { refreshAll } = useAppState();
+  const { t } = useTranslation();
   const { saleId, customerId } = route.params ?? {};
 
   const [amount, setAmount] = useState('');
@@ -63,65 +67,69 @@ export default function PaymentScreen() {
 
   return (
     <View style={styles.container}>
-      <Text variant="headlineSmall" style={styles.title}>
-        Record Payment
-      </Text>
+      <Card style={styles.card} mode="contained">
+        <Card.Content>
+          <Text variant="titleLarge" style={styles.title}>
+            {t('recordPayment')}
+          </Text>
 
-      {customer ? (
-        <Text variant="bodyMedium" style={styles.subtitle}>
-          Customer: {customer.name}
-        </Text>
-      ) : null}
+          {customer ? (
+            <Text variant="bodyMedium" style={styles.subtitle}>
+              {t('customers')}: {customer.name}
+            </Text>
+          ) : null}
 
-      {saleId ? (
-        <Text variant="bodySmall" style={styles.subtitle}>
-          Invoice: {saleId}
-        </Text>
-      ) : null}
+          {saleId ? (
+            <Text variant="bodySmall" style={styles.subtitle}>
+              Invoice: {saleId}
+            </Text>
+          ) : null}
 
-      <TextInput
-        label="Amount"
-        mode="outlined"
-        keyboardType="numeric"
-        value={amount}
-        onChangeText={setAmount}
-        style={styles.input}
-      />
-      <HelperText type="error" visible={!!error}>
-        {error}
-      </HelperText>
-
-      <RadioButton.Group onValueChange={setPaymentMethod} value={paymentMethod}>
-        {PAYMENT_METHODS.map((method) => (
-          <RadioButton.Item
-            key={method.key}
-            label={`${method.label}${method.key === 'credit' ? ' (Due)' : ''}`}
-            value={method.key}
+          <TextInput
+            label="Amount"
+            mode="outlined"
+            keyboardType="numeric"
+            value={amount}
+            onChangeText={setAmount}
+            style={styles.input}
           />
-        ))}
-      </RadioButton.Group>
+          <HelperText type="error" visible={!!error}>
+            {error}
+          </HelperText>
 
-      <TextInput
-        label="Notes"
-        value={notes}
-        onChangeText={setNotes}
-        multiline
-        mode="outlined"
-        style={styles.input}
-      />
+          <RadioButton.Group onValueChange={setPaymentMethod} value={paymentMethod}>
+            {PAYMENT_METHODS.map((method) => (
+              <RadioButton.Item
+                key={method.key}
+                label={`${method.label}${method.key === 'credit' ? ' (Due)' : ''}`}
+                value={method.key}
+              />
+            ))}
+          </RadioButton.Group>
 
-      <Button
-        mode="contained"
-        icon="cash-plus"
-        onPress={handleSubmit}
-        loading={loading}
-        style={styles.button}
-      >
-        Save Payment
-      </Button>
-      <Button mode="text" onPress={() => navigation.goBack()}>
-        Cancel
-      </Button>
+          <TextInput
+            label={t('notesLabel')}
+            value={notes}
+            onChangeText={setNotes}
+            multiline
+            mode="outlined"
+            style={styles.input}
+          />
+
+          <Button
+            mode="contained"
+            icon="cash-plus"
+            onPress={handleSubmit}
+            loading={loading}
+            style={styles.button}
+          >
+            Save Payment
+          </Button>
+          <Button mode="text" onPress={() => navigation.goBack()}>
+            Cancel
+          </Button>
+        </Card.Content>
+      </Card>
     </View>
   );
 }
@@ -129,20 +137,26 @@ export default function PaymentScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#F7F9FC',
+    padding: spacing.lg,
+    backgroundColor: colors.background,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
   },
   title: {
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   subtitle: {
-    marginBottom: 4,
-    color: '#6B778D',
+    marginBottom: spacing.xs,
+    color: colors.textSecondary,
   },
   input: {
-    marginVertical: 8,
+    marginVertical: spacing.sm,
   },
   button: {
-    marginTop: 16,
+    marginTop: spacing.md,
   },
 });
