@@ -61,7 +61,7 @@ export const queries = {
     paymentBreakdown:
       `SELECT payment_method, COUNT(*) AS count, SUM(total_amount) AS total
        FROM sales
-       WHERE DATE(sale_date) BETWEEN DATE(?) AND DATE(?),
+       WHERE DATE(sale_date) BETWEEN DATE(?) AND DATE(?)
        GROUP BY payment_method`,
     categorySales:
       `SELECT p.category, SUM(si.total_price) AS total, SUM(si.quantity) AS quantity

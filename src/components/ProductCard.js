@@ -1,6 +1,7 @@
 import { StyleSheet, View, Image } from 'react-native';
 import { Card, Text, Chip, ProgressBar } from 'react-native-paper';
 import { colors } from '../constants/colors';
+import { getProductCategoryLabel } from '../constants/categories';
 import { formatCurrency } from '../utils/formatters';
 
 export function ProductCard({ product, onPress, actions }) {
@@ -24,7 +25,7 @@ export function ProductCard({ product, onPress, actions }) {
           <View style={styles.header}>
             <Text variant="titleMedium">{product.name}</Text>
             <Chip compact style={styles.categoryChip}>
-              {product.category}
+              {getProductCategoryLabel(product.category)}
             </Chip>
           </View>
           <Text variant="bodyMedium" style={styles.price}>

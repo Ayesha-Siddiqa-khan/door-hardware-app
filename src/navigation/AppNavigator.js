@@ -7,7 +7,6 @@ import HomeScreen from '../screens/HomeScreen';
 import NewSaleScreen from '../screens/NewSaleScreen';
 import ProductsScreen from '../screens/ProductsScreen';
 import CustomersScreen from '../screens/CustomersScreen';
-import ReportsScreen from '../screens/ReportsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ExpensesScreen from '../screens/ExpensesScreen';
 import InvoiceScreen from '../screens/InvoiceScreen';
@@ -45,12 +44,6 @@ function TabNavigator() {
         component: CustomersScreen,
         title: t('customers'),
         icon: 'account-group',
-      },
-      {
-        name: 'Reports',
-        component: ReportsScreen,
-        title: t('reports'),
-        icon: 'chart-areaspline',
       },
       {
         name: 'Settings',

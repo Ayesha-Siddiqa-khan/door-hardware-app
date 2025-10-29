@@ -19,7 +19,7 @@ import {
   fetchProducts,
   updateProduct,
 } from '../services/productService';
-import { PRODUCT_CATEGORIES } from '../constants/categories';
+import { PRODUCT_CATEGORIES, getProductCategoryLabel } from '../constants/categories';
 import { ProductCard } from '../components/ProductCard';
 import { validateProduct } from '../utils/validators';
 import { useAppState } from '../state/AppStateProvider';
@@ -59,7 +59,9 @@ export default function ProductsScreen() {
       const q = search.toLowerCase();
       list = list.filter(
         (item) =>
-          item.name.toLowerCase().includes(q) || item.description?.toLowerCase().includes(q)
+          item.name.toLowerCase().includes(q) ||
+          item.description?.toLowerCase().includes(q) ||
+          getProductCategoryLabel(item.category).toLowerCase().includes(q)
       );
     }
     return list;

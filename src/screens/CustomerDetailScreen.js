@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { Card, Chip, IconButton, List, Text } from 'react-native-paper';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import { useAppState } from '../state/AppStateProvider';
 import { fetchCustomerById } from '../services/customerService';
 import {
   fetchCustomerPaymentsTotal,
@@ -15,6 +16,7 @@ export default function CustomerDetailScreen() {
   const route = useRoute();
   const navigation = useNavigation();
   const { customerId } = route.params ?? {};
+  const { refreshToken } = useAppState();
   const [customer, setCustomer] = useState(null);
   const [sales, setSales] = useState([]);
   const [totals, setTotals] = useState({ sales: 0, paid: 0, balance: 0 });
@@ -39,7 +41,7 @@ export default function CustomerDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       loadData();
-    }, [loadData])
+    }, [loadData, refreshToken])
   );
 
   const openSale = async (saleId) => {

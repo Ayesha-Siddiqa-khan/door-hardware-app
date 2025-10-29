@@ -15,6 +15,8 @@ import { useSettings } from '../hooks/useSettings';
 import { useSecurity } from '../hooks/useSecurity';
 import { useTranslation } from '../localization/LocalizationProvider';
 import { createBackup, restoreBackup } from '../utils/backup';
+import { resetDatabase } from '../database/db';
+import { useAppState } from '../state/AppStateProvider';
 
 export default function SettingsScreen() {
   const { settings, updateSetting } = useSettings();
@@ -23,6 +25,8 @@ export default function SettingsScreen() {
   const [confirmPin, setConfirmPin] = useState('');
   const { t } = useTranslation();
   const [messageKey, setMessageKey] = useState(null);
+  const [loadingDemo, setLoadingDemo] = useState(false);
+  const { refreshAll } = useAppState();
 
   const handleLanguageChange = (lang) => {
     updateSetting('language', lang);
@@ -62,6 +66,20 @@ export default function SettingsScreen() {
   const handleDisableLock = async () => {
     await security.disableLock();
     setMessageKey('appLockDisabled');
+  };
+
+  const handleLoadDemoData = async () => {
+    if (loadingDemo) return;
+    setLoadingDemo(true);
+    try {
+      await resetDatabase();
+      refreshAll();
+      setMessageKey('demoLoaded');
+    } catch (error) {
+      setMessageKey('demoLoadFailed');
+    } finally {
+      setLoadingDemo(false);
+    }
   };
 
   return (
@@ -133,6 +151,16 @@ export default function SettingsScreen() {
           </Button>
           <Button icon="restore" mode="outlined" onPress={handleRestore}>
             {t('restoreBackup')}
+          </Button>
+          <Button
+            icon="database-refresh"
+            mode="outlined"
+            onPress={handleLoadDemoData}
+            loading={loadingDemo}
+            disabled={loadingDemo}
+            style={styles.input}
+          >
+            {t('loadDemoData')}
           </Button>
           <HelperText type="info" visible={!!messageKey}>
             {messageKey ? t(messageKey) : ''}

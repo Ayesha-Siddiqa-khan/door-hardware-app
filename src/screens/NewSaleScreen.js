@@ -21,12 +21,12 @@ import { formatCurrency } from '../utils/formatters';
 import { validateSale } from '../utils/validators';
 import { generateInvoiceNumber } from '../utils/invoice';
 import { SaleItem } from '../components/SaleItem';
-import { PAYMENT_METHODS } from '../constants/categories';
+import { PAYMENT_METHODS, getProductCategoryLabel } from '../constants/categories';
 import { useAppState } from '../state/AppStateProvider';
 
 export default function NewSaleScreen() {
   const navigation = useNavigation();
-  const { refreshAll } = useAppState();
+  const { refreshAll, refreshToken } = useAppState();
 
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -48,7 +48,7 @@ export default function NewSaleScreen() {
   useFocusEffect(
     useCallback(() => {
       loadData();
-    }, [loadData])
+    }, [loadData, refreshToken])
   );
 
   const filteredProducts = useMemo(() => {
@@ -57,7 +57,8 @@ export default function NewSaleScreen() {
     return products.filter(
       (product) =>
         product.name.toLowerCase().includes(query) ||
-        product.category.toLowerCase().includes(query)
+        product.category.toLowerCase().includes(query) ||
+        getProductCategoryLabel(product.category).toLowerCase().includes(query)
     );
   }, [products, searchQuery]);
 
@@ -277,14 +278,19 @@ export default function NewSaleScreen() {
       <FlatList
         data={filteredProducts}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => (
-          <List.Item
-            title={item.name}
-            description={`${item.category} • ${formatCurrency(item.retail_price)}`}
-            onPress={() => handleAddItem(item)}
-            right={() => <IconButton icon="plus-circle" onPress={() => handleAddItem(item)} />}
-          />
-        )}
+        renderItem={({ item }) => {
+          const subtitle = `${getProductCategoryLabel(item.category)} | ${formatCurrency(
+            item.retail_price
+          )}`;
+          return (
+            <List.Item
+              title={item.name}
+              description={subtitle}
+              onPress={() => handleAddItem(item)}
+              right={() => <IconButton icon="plus-circle" onPress={() => handleAddItem(item)} />}
+            />
+          );
+        }}
         contentContainerStyle={styles.productList}
         ListEmptyComponent={<Text style={styles.emptyState}>No products found</Text>}
       />

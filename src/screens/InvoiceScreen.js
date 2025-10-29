@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Share, StyleSheet, View } from 'react-native';
 import { Button, Card, List, Text } from 'react-native-paper';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
+import { useAppState } from '../state/AppStateProvider';
 import * as Print from 'expo-print';
 import * as FileSystem from 'expo-file-system';
 import { fetchSaleDetail } from '../services/salesService';
@@ -11,6 +12,7 @@ import { formatDateTime } from '../utils/date';
 export default function InvoiceScreen() {
   const route = useRoute();
   const { saleId } = route.params ?? {};
+  const { refreshToken } = useAppState();
   const [sale, setSale] = useState(null);
   const [items, setItems] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -28,7 +30,7 @@ export default function InvoiceScreen() {
   useFocusEffect(
     useCallback(() => {
       loadInvoice();
-    }, [loadInvoice])
+    }, [loadInvoice, refreshToken])
   );
 
   if (!sale) {

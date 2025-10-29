@@ -21,3 +21,7 @@ export const EXPENSE_CATEGORIES = [
   'Maintenance',
   'Miscellaneous',
 ];
+
+export function getProductCategoryLabel(key) {
+  return PRODUCT_CATEGORIES.find((category) => category.key === key)?.label ?? key;
+}
